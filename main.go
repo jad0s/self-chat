@@ -12,16 +12,16 @@ import (
 )
 
 type IncomingMessage struct {
-	Type string `json:"type"`
-	From    string `json:"from"`
-	To      string `json:"to"`
-	MessageType    string `json:"type"`
-	Content string `json:"content"`
+	Type        string `json:"type"`
+	From        string `json:"from"`
+	To          string `json:"to"`
+	ContentType string `json:"content_type`
+	Content     string `json:"content"`
 }
 
-type ActionRequest struct{
-	Type string `json:"type"`
-	Action string `json:"action"`
+type ActionRequest struct {
+	Type     string `json:"type"`
+	Action   string `json:"action"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -45,6 +45,8 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	for {
+
+		var raw map[string]interface{}
 		mt, msg, err := conn.ReadMessage()
 
 		if err != nil {
@@ -52,19 +54,44 @@ func handler(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		var parsed IncomingMessage
-		err = json.Unmarshal(msg, &parsed)
+		err = json.Unmarshal(msg, &raw)
 		if err != nil {
-			log.Println("failed to parse message: ", err)
-			continue
+			log.Println("Invalid JSON: ", err)
+			return
 		}
-		if parsed.To == "register"
-		fmt.Printf("From %s to %s, %v %v", parsed.From, parsed.To, mt, msg)
-		//data := "ok"
-		err = conn.WriteMessage(websocket.TextMessage, []byte("Ok"))
-		if err != nil {
-			log.Println("Error sending message: ", err)
+
+		msgType, ok := raw["type"].(string)
+		if !ok {
+			log.Println("Missing or invalid type")
+			return
 		}
+
+		switch msgType {
+		case "message":
+			var parsed IncomingMessage
+			err = json.Unmarshal(msg, &parsed)
+			if err != nil {
+				log.Println("failed to parse message: ", err)
+				continue
+			}
+			fmt.Printf("From %s to %s, %v %v", parsed.From, parsed.To, mt, msg)
+			err = conn.WriteMessage(websocket.TextMessage, []byte("Ok"))
+			if err != nil {
+				log.Println("Error sending message: ", err)
+			}
+
+		case "action":
+			var parsed ActionRequest
+			err := json.Unmarshal(msg, &parsed)
+			if err != nil {
+				log.Println("Error parsing action request: ", err)
+				return
+			}
+		default:
+			log.Println("Unknown message type: ", msgType)
+
+		}
+
 	}
 }
 
@@ -90,6 +117,5 @@ func main() {
 	fmt.Println("Running on port", scktport)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", scktport), nil))
 }
-
 
 func register()
