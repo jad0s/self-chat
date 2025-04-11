@@ -141,7 +141,7 @@ func register(db *sql.DB, username string, password string) error {
 		return fmt.Errorf("failed to hash password: %v", err)
 	}
 
-	query := "INSERT INTO Users (username, password) values (?, ?)"
+	query := "INSERT INTO users (username, password_hash) values (?, ?)"
 	_, err = db.Exec(query, username, string(hashpass))
 	if err != nil {
 		return fmt.Errorf("failed to insert into database: %v", err)
@@ -151,8 +151,8 @@ func register(db *sql.DB, username string, password string) error {
 
 func login(db *sql.DB, username string, password string) error {
 	var dbpassword string
-	query := "SELECT password FROM users WHERE username = ?"
-	err = db.QueryRow(query, username).Scan(&dbpassword)
+	query := "SELECT password_hash FROM users WHERE username = ?"
+	err := db.QueryRow(query, username).Scan(&dbpassword)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return fmt.Errorf("no user found with username: %v", username)
@@ -166,7 +166,7 @@ func login(db *sql.DB, username string, password string) error {
 		return fmt.Errorf("wrong password")
 	}
 
-	//jwt magic
+	log.Println("Login succesful uwu")
 
 	return nil
 
