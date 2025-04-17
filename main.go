@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/websocket"
@@ -120,7 +121,7 @@ func main() {
 		log.Fatal("Failed to read password: ", err)
 	}
 	fmt.Println()
-	dbpass := string(bytePassword)
+	dbpass := strings.TrimSpace(string(bytePassword))
 
 	dsn := fmt.Sprintf("server:%v@tcp(chatdb.s:3306)/selfchat", dbpass)
 	db, err := sql.Open("mysql", dsn)
