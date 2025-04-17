@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/websocket"
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/term"
 )
 
 type IncomingMessage struct {
@@ -112,8 +114,15 @@ func handler(w http.ResponseWriter, r *http.Request, db *sql.DB) {
 
 func main() {
 	scktport := 8081
+	fmt.Println("Enter DB password: ")
+	bytePassword, err := term.ReadPassword(int(os.Stdin.Fd()))
+	if err != nil {
+		log.Fatal("Failed to read password: ", err)
+	}
+	fmt.Println()
+	dbpass := string(bytePassword)
 
-	dsn := "root:@tcp(localhost:3306)/self-chat"
+	dsn := fmt.Sprintf("server:%v@tcp(chatdb.s:3306)/selfchat", dbpass)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		log.Println("Error connecting to database", err)
